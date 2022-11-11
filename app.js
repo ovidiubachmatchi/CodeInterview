@@ -9,13 +9,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+app.get('/', require('./routes/index'));
+app.get('/login', require('./routes/login'));
 
-app.get("/", (req, res) => {
-    res.render("index", {
-        title: "testing"
-    });
-});
-
-app.listen(PORT, () => {
-    console.log('Server is running on port ' + PORT);
-});
+app.listen(PORT, console.log('Server is running on port ' + PORT));
