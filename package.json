@@ -1,0 +1,23 @@
+{
+  "name": "thesis",
+  "version": "1.0.0",
+  "description": "Ovidiu Bachmatchi thesis",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ovidiubachmatchi/thesis.git"
+  },
+  "author": "Ovidiu Bachmatchi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ovidiubachmatchi/thesis/issues"
+  },
+  "homepage": "https://github.com/ovidiubachmatchi/thesis#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
