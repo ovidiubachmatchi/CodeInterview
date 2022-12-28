@@ -1,0 +1,104 @@
+.top {
+    display: flex;
+    flex-direction: row;
+}
+
+.top-left {
+    background-color: rgb(15, 15, 15);
+    height: 10vh;
+    min-height: 3rem;
+    width: 60vw;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+}
+
+.top-right {
+    background-color: rgb(15, 15, 15);
+    height: 10vh;
+    min-height: 3rem;
+    width: 40vw;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+}
+
+.top-right > .button {
+    background-color: rgb(100, 15, 16);
+    height: 2rem;
+    margin: 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+    font-family: "Roboto","Helvetica","Arial",sans-serif;
+    align-items: center;
+    aspect-ratio: 2 / 1;
+    display: flex;
+    justify-content: center;
+}
+
+.editor-settings {
+    height: 10vh;
+    min-height: 3rem;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+}
+
+.settings {
+background-color: gray;
+width: 2rem;
+margin: 1rem;
+cursor: pointer;
+border-radius: 5px;
+align-items: center;
+justify-content: center;
+aspect-ratio: 1 / 1;
+display: flex;
+}
+
+.settings > svg {
+width: 80%;
+height: 80%;
+}
+
+.language {
+background-color: gray;
+height: 2rem;
+margin: 1rem;
+cursor: pointer;
+border-radius: 5px;
+align-items: center;
+justify-content: center;
+aspect-ratio: 7 / 2;
+display: flex;
+justify-content: space-between;
+}
+
+.run {
+    background-color: rgb(65, 205, 65);
+    height: 2rem;
+    margin: 1rem;
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+    font-family: "Roboto","Helvetica","Arial",sans-serif;
+    align-items: center;
+    aspect-ratio: 2 / 1;
+    display: flex;
+    justify-content: center;
+}
+
+.language > svg {
+height: 90%;
+margin-right: 5%;
+}
+
+.language > p {
+margin-left: 10%;
+}
+
+.MuiOutlinedInput-notchedOutline {
+border-color: #00000000 !important;
+}

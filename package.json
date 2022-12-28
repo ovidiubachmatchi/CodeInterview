@@ -1,24 +1,49 @@
 {
-  "name": "thesis",
-  "version": "1.0.0",
-  "description": "Ovidiu Bachmatchi thesis",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js",
-    "test": "test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ovidiubachmatchi/thesis.git"
-  },
-  "author": "Ovidiu Bachmatchi",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ovidiubachmatchi/thesis/issues"
-  },
-  "homepage": "https://github.com/ovidiubachmatchi/thesis#readme",
+  "name": "thesis2",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "ejs": "^3.1.8",
-    "express": "^4.18.2"
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@monaco-editor/react": "^4.4.6",
+    "@mui/material": "^5.11.1",
+    "@mui/styles": "^5.11.1",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.10",
+    "@types/react": "^18.0.26",
+    "@types/react-dom": "^18.0.10",
+    "mui-datatables": "^4.2.2",
+    "peerjs": "^1.4.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.7.1",
+    "react-scripts": "^5.0.1",
+    "simple-peer": "^9.11.1",
+    "typescript": "^4.9.4",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
