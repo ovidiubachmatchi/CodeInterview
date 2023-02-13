@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -16,6 +16,7 @@ export default function BasicSelect({setLanguage}) {
   };
 
   return (
+    <>
     <Box sx={{ minWidth: 120 }}>
       <FormControl fullWidth>
         <Select
@@ -30,5 +31,6 @@ export default function BasicSelect({setLanguage}) {
         </Select>
       </FormControl>
     </Box>
+    </>
   );
 }
