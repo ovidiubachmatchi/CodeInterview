@@ -1,0 +1,13 @@
+package ovidiubacmatchi.codeinterview;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CodeinterviewApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CodeinterviewApplication.class, args);
+	}
+
+}
