@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { IoMdSettings } from 'react-icons/io'
 import BasicSelect from './BasicSelect.js'
 import Editor from './Editor'
@@ -25,11 +25,11 @@ let uid = String(Math.floor(Math.random() * 1000000))
 console.log(uid);
 
 let dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
-
 const createConnection = async () => {
-  let queryString = window.location.search
-  let urlParams = new URLSearchParams(queryString)
-  let roomId = urlParams.get('id')
+  let queryString = window.location.search;
+  let urlParams = new URLSearchParams(queryString);
+  let roomId = urlParams.get('id');
+
   if (!roomId) {
     document.location = '/';
   }
@@ -81,6 +81,8 @@ function App() {
 
   const [language, setLanguage] = useState('Java')
   const [code, setCode] = useState()
+  const isRemoteUpdate = useRef(false);
+  const [isInitiator, setIsInitiator] = useState(false);
 
   // listen for an offer from the other client
   const onOffer = async function (message) {
@@ -121,7 +123,20 @@ function App() {
 
     if (message.type === 'toomany') {
       window.canJoin = 0;
-      // if(!alert("Already two people are connected")) document.location = '/';
+      if (!alert("Already two people are connected")) document.location = '/';
+    }
+
+    if (message.type === 'initiate_offer') {
+      setIsInitiator(true);
+      // if (isInitiator) {
+      createConnection();
+      // }
+    }
+
+    if (message.type === 'wait_for_new_user') {
+      console.log("User disconnected. Waiting for a new user to join.");
+      // Perform any necessary cleanup, UI updates, or reset variables
+      // setIsInitiator(false);
     }
 
     if (message.type === 'offer') {
@@ -147,23 +162,39 @@ function App() {
 
   dataChannel.onmessage = (event) => {
     // update the state
-    setCode(event.data);
+    const receivedData = JSON.parse(event.data);
+    console.log(receivedData);
+
+    isRemoteUpdate.current = true;
+    setCode(receivedData.code);
+    setLanguage(receivedData.language);
   };
+
+
 
   useEffect(() => {
     setCode(getDefaultValue(language))
   }, [language])
 
   useEffect(() => {
-    createConnection()
-  }, [])
+    ws.onopen = function () {
+      ws.send(JSON.stringify({ type: 'join', room: roomId }));
+    };
+  }, []);
 
   useEffect(() => {
-    if (code !== undefined) {
-      if (dataChannel.readyState === "open")
-        dataChannel.send(code)
+    if (code !== undefined && !isRemoteUpdate.current) {
+      if (dataChannel.readyState === "open") {
+        let dataToBeSent = {
+          code: code,
+          language: language
+        }
+        dataChannel.send(JSON.stringify(dataToBeSent));
+      }
     }
-  }, [code]);
+    isRemoteUpdate.current = false;
+  }, [code, language]);
+
 
   return (
     <>
@@ -188,7 +219,9 @@ function App() {
         <Editor
           code={code}
           language={language}
-          setCode={(code) => setCode(code)}
+          setCode={(code) => {
+            setCode(code);
+          }}
         />
       </div>
     </>

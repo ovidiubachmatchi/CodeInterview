@@ -1,40 +1,32 @@
-import React from 'react'
+
 import "./Home.css"
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { redirect, useNavigate } from "react-router-dom";
+
+
 
 function Index() {
 
-    let navigate = useNavigate();
-    const routeChange = () => {
-        let invitationCode = document.querySelector('input').value;
-        let path = `/room?id=${invitationCode}`;
-        if (invitationCode)
-            navigate(path);
-    }
-
-    const startInterview = () => {
-        let id = Math.random().toString(36).substring(2, 7);
-        let path = `/room?id=${id}`;
-        navigate(path);
-    }
+    const [invitationCode, setInvitationCode] = useState("");
 
     return (
         <div id="background" style={{ backgroundImage: `url('/pattern.png')` }}>
             <div id="left">
                 <h1 id="title">Code <br /> Interview</h1>
-                <button className="button" onClick={startInterview}>Start an interview</button>
-
+                <a href={"/room?id=" + Math.random().toString(36).substring(2, 7)}>
+                    <button className="button">Start an interview</button>
+                </a>
             </div>
             <div id="middle">
                 <img src={"./poza1.png"} alt="poza1" />
             </div>
             <div id="right">
-
-                <label>
-                    <input className='button' type="text" placeholder='Invitation code' />
-                </label>
-                {/* // make this button redirect to /room?id=invitationCode */}
-                <button className="button" onClick={routeChange}>Join an interview</button>
+                <div id="right-box">
+                    <input className='button input' onChange={e => setInvitationCode(e.target.value)} type="text" placeholder='Invitation code' />
+                    <a href={"/room?id=" + invitationCode}>
+                        <button className="button">Join an interview</button>
+                    </a>
+                </div>
             </div>
         </div>
     )

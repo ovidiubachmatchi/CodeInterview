@@ -4,8 +4,7 @@ import './index.css';
 import App from './components/App';
 import {
   createBrowserRouter,
-  RouterProvider,
-  Route
+  RouterProvider
 } from 'react-router-dom'
 import Home from './components/Home';
 

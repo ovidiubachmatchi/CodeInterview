@@ -19,23 +19,42 @@ wss.on('connection', function connection(ws, req) {
       const messageData = JSON.parse(message);
       const type = messageData.type;
       if (messageData.room != null) {
-        console.log("room:", messageDataclear);
+        // console.log("room:", messageData);
         if (type === "join") {
+          ws.roomId = messageData.room;
           console.log("joined new client on room:", messageData.room);
+          // check if the room exists and if it does not, create it
           if (!clientsInRoom.get(messageData.room)) {
             clientsInRoom.set(messageData.room, []);
           }
-          if (clientsInRoom.get(messageData.room).length < 2) {
+          if (clientsInRoom.get(messageData.room).length <= 2) {
             clientsInRoom.get(messageData.room).push(ws);
           }
-          else {
+          // if there are no other clients in the room, this client is the initiator
+          if (clientsInRoom.get(messageData.room).length === 1) {
+            console.log("first client in room, setting as initiator");
+            ws.isInitiator = true;
+          }
+          // if there are two clients in the room, send an offer to the initiator
+          if (clientsInRoom.get(messageData.room).length === 2) {
+            console.log("two clients in room, sending offer");
+            const initiator = clientsInRoom.get(messageData.room).find(client => client.isInitiator);
+            if (initiator) {
+              initiator.send(JSON.stringify({
+                type: 'initiate_offer',
+              }));
+            }
+          }
+          // if there are more than two clients in the room, send a message to the client
+          if (clientsInRoom.get(messageData.room).length >= 3) {
+            console.log("TOO MANY CLIENTS");
             ws.send(JSON.stringify({
               type: 'toomany'
-            }))
+            }));
+            return;
           }
 
-        }
-        else if (type === 'offer') {
+        } else if (type === 'offer') {
           // handle an offer message by sending it to all other clients
           console.log("🕊️  OFFER: got an offer")
           broadcast(
@@ -83,21 +102,25 @@ wss.on('connection', function connection(ws, req) {
       }
     });
 
-  ws.on('close', function close() {
+  ws.on('close', () => {
+    // Remove the disconnected client from the room
+    const roomClients = clientsInRoom.get(ws.roomId);
+    if (roomClients) {
+      clientsInRoom.set(ws.roomId, roomClients.filter(client => client !== ws));
+      console.log(`Client disconnected from room ${ws.roomId}`);
+    }
 
-    // remove the client from the list of connected clients when it disconnects
-    clientsInRoom.forEach((a) => {
-      var index = a.indexOf(ws);
-      if (index !== -1) {
-        a.splice(index, 1);
-        ws.close()
-        console.log("client removed");
+    // Reset the remaining client's isInitiator property
+    if (ws.roomId && clientsInRoom.get(ws.roomId)) {
+      const remainingClient = clientsInRoom.get(ws.roomId).find(client => client !== ws);
+      if (remainingClient) {
+        remainingClient.isInitiator = false;
+        remainingClient.send(JSON.stringify({ type: 'wait_for_new_user' }));
       }
-      if (a.length === 0) {
-        clientsInRoom.delete(a);
-      }
-    });
+    }
   });
+
+
 });
 
 function broadcast(senderId, room, message) {

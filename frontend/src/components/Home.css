@@ -47,12 +47,13 @@ h1 {
     text-align: left;
     text-transform: uppercase;
 }
-input {
+.input {
+    width: 70% !important;
     margin: 4em 0 2em 0;
     display:inline-block;
-}
-label {
-    width: 70%;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
 }
 .button {
     background-color: white;
@@ -60,11 +61,23 @@ label {
     color: black;
     padding: 15px 32px;
     text-align: center;
-    width: 70%;
+    width: 100%;
     text-decoration: none;
     display: inline-block;
     font-size: 1rem;
     cursor: pointer;
     border-radius: 15px;
     font-family: 'Jura', sans-serif;
+}
+
+#right-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+a {
+    width: 70%;
 }
