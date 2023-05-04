@@ -21,10 +21,21 @@ const servers = {
   ]
 }
 const pc = new RTCPeerConnection(servers)
+const dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
 let uid = String(Math.floor(Math.random() * 1000000))
 console.log(uid);
 
-let dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
+async function getUserMediaStream() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    console.log("Local stream obtained:", stream);
+    return stream;
+  } catch (error) {
+    console.error("Error accessing media devices.", error);
+    return null;
+  }
+}
+
 const createConnection = async () => {
   let queryString = window.location.search;
   let urlParams = new URLSearchParams(queryString);
@@ -37,6 +48,16 @@ const createConnection = async () => {
   ws.onopen = function () {
     ws.send(JSON.stringify({ type: 'join', room: roomId }));
   }
+
+  const localStream = await getUserMediaStream();
+  if (localStream) {
+    localStream.getTracks().forEach((track) => {
+      pc.addTrack(track, localStream);
+    });
+    document.querySelector("#localVideo").srcObject = localStream;
+  }
+
+
 
   dataChannel.onclose = () => {
     console.log('Data channel closed');
@@ -61,7 +82,17 @@ const createConnection = async () => {
     // set the remote description received from the other client
     await pc.setRemoteDescription(event.answer);
   };
+  pc.onconnectionstatechange = (event) => {
+    console.log(`Connection state changed: ${pc.connectionState}`);
+  };
 
+  pc.oniceconnectionstatechange = (event) => {
+    console.log(`ICE connection state changed: ${pc.iceConnectionState}`);
+  };
+
+  pc.onicegatheringstatechange = (event) => {
+    console.log(`ICE gathering state changed: ${pc.iceGatheringState}`);
+  };
 
 
   pc.onicecandidate = async (event) => {
@@ -79,6 +110,7 @@ const createConnection = async () => {
 
 function App() {
 
+
   const [language, setLanguage] = useState('Java')
   const [code, setCode] = useState()
   const isRemoteUpdate = useRef(false);
@@ -87,24 +119,45 @@ function App() {
   // listen for an offer from the other client
   const onOffer = async function (message) {
     // set the remote description received from the other client
-    await pc.setRemoteDescription(
-      new RTCSessionDescription(message),
-      async () => {
-        // if we received an offer, we need to answer
-        if (pc.signalingState === "have-remote-offer" || pc.signalingState === "have-local-pranswer") {
-          let answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          console.log('sending answer');
-          // send the answer to the other client through the signaling server
-          ws.send(JSON.stringify({
-            room: roomId,
-            type: 'answer',
-            answer: answer
-          }));
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(message));
+      console.log("Remote description set:", message);
+
+      // Process the candidates queue
+      while (candidatesQueue.length) {
+        const candidate = candidatesQueue.shift();
+        try {
+          await pc.addIceCandidate(candidate);
+          console.log("ICE candidate added from queue:", candidate);
+        } catch (error) {
+          console.error("Error adding ICE candidate from queue:", error);
         }
       }
-    );
+
+    } catch (error) {
+      console.error("Error setting remote description:", error);
+    }
+
+    // if we received an offer, we need to answer
+    if (pc.signalingState === "have-remote-offer" || pc.signalingState === "have-local-pranswer") {
+      try {
+        let answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        console.log("Answer created and set:", answer);
+
+        // send the answer to the other client through the signaling server
+        ws.send(JSON.stringify({
+          room: roomId,
+          type: 'answer',
+          answer: answer
+        }));
+      } catch (error) {
+        console.error("Error creating or setting answer:", error);
+      }
+    }
   };
+
+
 
   const addAnswer = async (answer) => {
     if (!pc.currentRemoteDescription) {
@@ -156,9 +209,74 @@ function App() {
     if (message.type === 'candidate') {
       message = JSON.parse(String.fromCharCode(...message.candidate.data));
       console.log('candidate received from ws', message);
-      pc.addIceCandidate(new RTCIceCandidate(message.candidate))
+
+      const candidate = new RTCIceCandidate(message.candidate);
+      if (pc.remoteDescription && pc.remoteDescription.type) {
+        // If the remote description is set, add the candidate
+        try {
+          await pc.addIceCandidate(candidate);
+          console.log("ICE candidate added:", candidate);
+        } catch (error) {
+          console.error("Error adding ICE candidate:", error);
+        }
+      } else {
+        // If the remote description is not set yet, store the candidate in the queue
+        candidatesQueue.push(candidate);
+      }
     }
   }
+
+  pc.ontrack = (event) => {
+    const remoteVideo = document.getElementById('remoteVideo');
+    console.log('Remote track added:', event.streams[0]);
+    if (event.streams && event.streams[0]) {
+      remoteVideo.srcObject = event.streams[0];
+    } else {
+      if (!remoteVideo.srcObject) {
+        remoteVideo.srcObject = new MediaStream();
+      }
+      remoteVideo.srcObject.addTrack(event.track);
+    }
+  };
+
+
+  useEffect(() => {
+    getUserMediaAndSetLocalVideo();
+  }, []);
+
+  const getUserMediaAndSetLocalVideo = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const localVideo = document.getElementById('localVideo');
+      localVideo.srcObject = stream;
+
+      // Add the tracks to the RTCPeerConnection
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
+    } catch (err) {
+      console.error('Error getting user media:', err);
+    }
+  };
+
+  const candidatesQueue = [];
+
+  // const onCandidate = async function (message) {
+  //   const candidate = new RTCIceCandidate(message.candidate);
+  //   if (pc.remoteDescription && pc.remoteDescription.type) {
+  //     // If the remote description is set, add the candidate
+  //     try {
+  //       await pc.addIceCandidate(candidate);
+  //       console.log("ICE candidate added:", candidate);
+  //     } catch (error) {
+  //       console.error("Error adding ICE candidate:", error);
+  //     }
+  //   } else {
+  //     // If the remote description is not set yet, store the candidate in the queue
+  //     candidatesQueue.push(candidate);
+  //   }
+  // };
+
 
   dataChannel.onmessage = (event) => {
     // update the state
@@ -169,8 +287,6 @@ function App() {
     setCode(receivedData.code);
     setLanguage(receivedData.language);
   };
-
-
 
   useEffect(() => {
     setCode(getDefaultValue(language))
@@ -199,6 +315,8 @@ function App() {
   return (
     <>
       <div className="app-root">
+        <video id="localVideo" autoPlay muted style={{ position: 'absolute', right: 0, bottom: 0, width: 250, height: 250 }} />
+        <video id="remoteVideo" autoPlay playsInline style={{ position: 'absolute', right: 250, bottom: 0, width: 250, height: 250 }} />
         <div className="top">
           <div className="top-left">
             <div className="editor-settings">
@@ -211,9 +329,6 @@ function App() {
             <div className="run"><p>Run</p></div>
           </div>
           <div className="top-right">
-            <div className="button share">Share</div>
-            <div className="button call">call</div>
-            <div className="button send">send</div>
           </div>
         </div>
         <Editor

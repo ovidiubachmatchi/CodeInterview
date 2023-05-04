@@ -45,6 +45,14 @@ wss.on('connection', function connection(ws, req) {
               }));
             }
           }
+          // if (clientsInRoom.get(messageData.room).length === 2) {
+          //   console.log("two clients in room, sending offer");
+          //   clientsInRoom.get(messageData.room).forEach(client => {
+          //     client.send(JSON.stringify({
+          //       type: 'initiate_offer',
+          //     }));
+          //   });
+          // }
           // if there are more than two clients in the room, send a message to the client
           if (clientsInRoom.get(messageData.room).length >= 3) {
             console.log("TOO MANY CLIENTS");
