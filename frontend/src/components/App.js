@@ -28,7 +28,8 @@ const servers = {
 }
 
 let pc = new RTCPeerConnection(servers)
-const dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
+let dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
+
 let uid = String(Math.floor(Math.random() * 1000000))
 console.log(uid);
 
@@ -61,39 +62,83 @@ const createConnection = async () => {
     localStream.getTracks().forEach((track) => {
       pc.addTrack(track, localStream);
     });
-    document.querySelector("#localVideo").srcObject = localStream;
+    const localVideoElement = document.querySelector("#localVideo");
+
+    if (localVideoElement) {
+      localVideoElement.srcObject = localStream;
+    } else {
+      console.error("Could not find element with ID 'localVideo'.");
+    }
   }
-
-
-
-  dataChannel.onclose = () => {
-    console.log('Data channel closed');
+  dataChannel.onopen = (event) => {
+    console.log('Data channel is open');
   };
+
+  if (dataChannel)
+    dataChannel.onclose = () => {
+      console.log('Data channel closed');
+    };
 
   console.log('call button called');
   if (window.canJoin === 1) {
-    let offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    console.log('creating offer', offer);
-    ws.send(JSON.stringify({
-      room: roomId,
-      type: 'offer',
-      offer: offer
-    }));
+    if (pc.signalingState === 'have-remote-offer') {
+      let answer = await pc.createAnswer();
+      console.log(1);
+      await pc.setLocalDescription(answer);
+      console.log('creating answer', answer);
+      ws.send(JSON.stringify({
+        room: roomId,
+        type: 'answer',
+        answer: answer
+      }));
+    } else {
+      let offer = await pc.createOffer();
+      console.log(2);
+      await pc.setLocalDescription(offer);
+      console.log('creating offer', offer);
+      ws.send(JSON.stringify({
+        room: roomId,
+        type: 'offer',
+        offer: offer
+      }));
+    }
   }
+
   console.log('offer sended to ws');
   pc.onanswer = async function (event) {
     console.log("onanswear");
+    console.log("remote1");
     await pc.setRemoteDescription(event.answer);
   };
 
-  pc.oniceconnectionstatechange = (event) => {
+  pc.oniceconnectionstatechange = async (event) => {
     console.log(`ICE connection state changed: ${pc.iceConnectionState}`);
+
+    if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+      if (pc.signalingState === "have-remote-offer" || pc.signalingState === "have-local-pranswer") {
+        try {
+          const answer = await pc.createAnswer();
+          console.log(3);
+          await pc.setLocalDescription(answer);
+          console.log("Answer created and set:", answer);
+
+          ws.send(JSON.stringify({
+            room: roomId,
+            type: 'answer',
+            answer: answer
+          }));
+        } catch (error) {
+          console.error("Error creating or setting answer:", error);
+        }
+      }
+    }
   };
+
 
   pc.onicegatheringstatechange = (event) => {
     console.log(`ICE gathering state changed: ${pc.iceGatheringState}`);
   };
+
 
 
   pc.onicecandidate = async (event) => {
@@ -133,6 +178,7 @@ function App() {
 
   const onOffer = async function (message) {
     try {
+      console.log("remote2");
       await pc.setRemoteDescription(new RTCSessionDescription(message));
       console.log("Remote description set:", message);
 
@@ -153,6 +199,7 @@ function App() {
     if (pc.signalingState === "have-remote-offer" || pc.signalingState === "have-local-pranswer") {
       try {
         let answer = await pc.createAnswer();
+        console.log(4);
         await pc.setLocalDescription(answer);
         console.log("Answer created and set:", answer);
 
@@ -171,6 +218,7 @@ function App() {
 
   const addAnswer = async (answer) => {
     if (!pc.currentRemoteDescription) {
+      console.log("remote3");
       await pc.setRemoteDescription(answer)
     }
   }
@@ -269,28 +317,29 @@ function App() {
   }, [pc]);
 
   const candidatesQueue = [];
+  if (dataChannel)
+    dataChannel.onmessage = (event) => {
+      const receivedData = JSON.parse(event.data);
+      console.log(receivedData);
+      console.log("custom message on datachannel received");
 
-  dataChannel.onmessage = (event) => {
-    const receivedData = JSON.parse(event.data);
-    console.log(receivedData);
-
-    isRemoteUpdate.current = true;
-    if (receivedData.code !== undefined) {
-      setCode(receivedData.code);
+      isRemoteUpdate.current = true;
+      if (receivedData.code !== undefined) {
+        setCode(receivedData.code);
+      }
+      if (receivedData.language !== undefined) {
+        setLanguage(receivedData.language);
+      };
+      if (receivedData.task !== undefined) {
+        setTask(receivedData.task);
+      }
+      if (receivedData.inputText !== undefined) {
+        setInputText(receivedData.inputText);
+      }
+      if (receivedData.outputText !== undefined) {
+        setOutputText(receivedData.outputText);
+      }
     }
-    if (receivedData.language !== undefined) {
-      setLanguage(receivedData.language);
-    };
-    if (receivedData.task !== undefined) {
-      setTask(receivedData.task);
-    }
-    if (receivedData.inputText !== undefined) {
-      setInputText(receivedData.inputText);
-    }
-    if (receivedData.outputText !== undefined) {
-      setOutputText(receivedData.outputText);
-    }
-  }
 
   useEffect(() => {
     setRemoteChanges(false);
@@ -300,11 +349,12 @@ function App() {
 
   useEffect(() => {
     if (remoteChanges !== false && code !== undefined && !isRemoteUpdate.current) {
-      if (dataChannel.readyState === "open") {
+      if (!isRemoteUpdate.current && dataChannel && dataChannel.readyState === "open") {
         let dataToBeSent = {
           code: code
         }
-        dataChannel.send(JSON.stringify(dataToBeSent));
+        if (dataChannel.readyState === 'open')
+          dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     setRemoteChanges(true);
@@ -313,11 +363,12 @@ function App() {
 
   useEffect(() => {
     if (!isRemoteUpdate.current) {
-      if (dataChannel.readyState === "open") {
+      if (!isRemoteUpdate.current && dataChannel && dataChannel.readyState === "open") {
         let dataToBeSent = {
           language: language
         }
-        dataChannel.send(JSON.stringify(dataToBeSent));
+        if (dataChannel.readyState === 'open')
+          dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     isRemoteUpdate.current = false;
@@ -325,11 +376,12 @@ function App() {
 
   useEffect(() => {
     if (!isRemoteUpdate.current) {
-      if (dataChannel.readyState === "open") {
+      if (!isRemoteUpdate.current && dataChannel && dataChannel.readyState === "open") {
         let dataToBeSent = {
           inputText: inputText
         }
-        dataChannel.send(JSON.stringify(dataToBeSent));
+        if (dataChannel.readyState === 'open')
+          dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     isRemoteUpdate.current = false;
@@ -337,11 +389,12 @@ function App() {
 
   useEffect(() => {
     if (!isRemoteUpdate.current) {
-      if (dataChannel.readyState === "open") {
+      if (!isRemoteUpdate.current && dataChannel && dataChannel.readyState === "open") {
         let dataToBeSent = {
           outputText: outputText
         }
-        dataChannel.send(JSON.stringify(dataToBeSent));
+        if (dataChannel.readyState === 'open')
+          dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     isRemoteUpdate.current = false;
@@ -349,11 +402,12 @@ function App() {
 
   useEffect(() => {
     if (!isRemoteUpdate.current) {
-      if (dataChannel.readyState === "open") {
+      if (!isRemoteUpdate.current && dataChannel && dataChannel.readyState === "open") {
         let dataToBeSent = {
           task: task
         }
-        dataChannel.send(JSON.stringify(dataToBeSent));
+        if (dataChannel.readyState === 'open')
+          dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     isRemoteUpdate.current = false;
