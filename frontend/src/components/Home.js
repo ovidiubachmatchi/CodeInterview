@@ -1,9 +1,6 @@
 
 import "./Home.css"
-import React, { useEffect, useState } from "react";
-import { redirect, useNavigate } from "react-router-dom";
-
-
+import React, { useState } from "react";
 
 function Index() {
 

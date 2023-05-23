@@ -26,7 +26,8 @@ const servers = {
     }
   ]
 }
-const pc = new RTCPeerConnection(servers)
+
+let pc = new RTCPeerConnection(servers)
 const dataChannel = pc.createDataChannel(roomId, { negotiated: true, id: 0 });
 let uid = String(Math.floor(Math.random() * 1000000))
 console.log(uid);
@@ -192,6 +193,11 @@ function App() {
     if (message.type === 'wait_for_new_user') {
       console.log("User disconnected. Waiting for a new user to join.");
       setConnected(false);
+
+      // Cleanup and prepare for new connection
+      pc.close();
+      pc = new RTCPeerConnection(servers); // new
+      createConnection(pc); // new
     }
 
     if (message.type === 'offer') {
@@ -257,6 +263,10 @@ function App() {
       console.error('Error getting user media:', err);
     }
   };
+
+  useEffect(() => {
+    createConnection(pc);
+  }, [pc]);
 
   const candidatesQueue = [];
 
@@ -484,7 +494,7 @@ function App() {
 
   pc.onconnectionstatechange = (event) => {
     console.log(`Connection state changed: ${pc.connectionState}`);
-    if (pc.connectionState == "connected")
+    if (pc.connectionState === "connected")
       setConnected(true);
     else
       setConnected(false);
