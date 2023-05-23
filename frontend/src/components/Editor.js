@@ -18,6 +18,7 @@ function Editor(props) {
   };
 
   const options = {
+    fontSize: 14,
     selectOnLineNumbers: true
   };
 

@@ -1,3 +1,23 @@
+// const WebSocket = require('ws');
+// const fs = require('fs');
+// const https = require('https');
+
+// const privateKey = fs.readFileSync('/Users/obachmatchi/localhost+3-key.pem', 'utf8');
+// const certificate = fs.readFileSync('/Users/obachmatchi/localhost+3.pem', 'utf8');
+// const ca = fs.readFileSync('/Users/obachmatchi/Library/Application Support/mkcert/rootCA.pem', 'utf8');
+
+// const credentials = { key: privateKey, cert: certificate, ca: ca };
+// const httpsServer = https.createServer(credentials);
+
+// const wss = new WebSocket.Server({ server: httpsServer });
+
+// const ip = '192.168.1.151';
+// const port = 8080;
+// httpsServer.listen(port, ip, () => {
+//   console.log(`WebSocket server is running on wss://${ip}:${port}`);
+// });
+
+
 const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8080 });

@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { IoMdSettings } from 'react-icons/io'
-import BasicSelect from './BasicSelect.js'
+import { TbAccessPoint, TbAccessPointOff } from "react-icons/tb";
+import { TbPlayerPlay } from "react-icons/tb";
+import { AiOutlineAudioMuted, AiOutlineAudio } from 'react-icons/ai'
+import { BsCameraVideoOff, BsCameraVideo } from 'react-icons/bs'
+import { RiArrowDropDownFill, RiArrowDropUpFill } from 'react-icons/ri'
+
+import InputEditor from './InputEditor'
+import OutputEditor from './OutputEditor'
 import Editor from './Editor'
+import TaskEditor from './TaskEditor.js'
 import "./App.css"
 import getDefaultValue from '../languages/defaultCode'
-// import {createConnection, sendMessage} from '../webrtc/webrtc.js'
 
 let queryString = window.location.search
 let urlParams = new URLSearchParams(queryString)
@@ -68,7 +74,6 @@ const createConnection = async () => {
     let offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
     console.log('creating offer', offer);
-    // send the offer to the other client through the signaling server
     ws.send(JSON.stringify({
       room: roomId,
       type: 'offer',
@@ -76,14 +81,9 @@ const createConnection = async () => {
     }));
   }
   console.log('offer sended to ws');
-  // listen for an answer from the other client
   pc.onanswer = async function (event) {
     console.log("onanswear");
-    // set the remote description received from the other client
     await pc.setRemoteDescription(event.answer);
-  };
-  pc.onconnectionstatechange = (event) => {
-    console.log(`Connection state changed: ${pc.connectionState}`);
   };
 
   pc.oniceconnectionstatechange = (event) => {
@@ -109,21 +109,32 @@ const createConnection = async () => {
 }
 
 function App() {
+  ws.onopen = function () {
+    ws.send(JSON.stringify({ type: 'join', room: roomId }));
+  };
 
+  const [showVideoContainer, setShowVideoContainer] = useState(false)
 
-  const [language, setLanguage] = useState('Java')
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(false);
+
+  const [remoteChanges, setRemoteChanges] = useState(false)
+  const [language, setLanguage] = useState('java')
   const [code, setCode] = useState()
+  const [task, setTask] = useState('please input the problem here')
+  const [outputText, setOutputText] = useState();
+
   const isRemoteUpdate = useRef(false);
   const [isInitiator, setIsInitiator] = useState(false);
+  const [inputText, setInputText] = useState("");
+  const [selected, setSelected] = useState("Task");
+  const [connected, setConnected] = useState(false);
 
-  // listen for an offer from the other client
   const onOffer = async function (message) {
-    // set the remote description received from the other client
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(message));
       console.log("Remote description set:", message);
 
-      // Process the candidates queue
       while (candidatesQueue.length) {
         const candidate = candidatesQueue.shift();
         try {
@@ -138,14 +149,12 @@ function App() {
       console.error("Error setting remote description:", error);
     }
 
-    // if we received an offer, we need to answer
     if (pc.signalingState === "have-remote-offer" || pc.signalingState === "have-local-pranswer") {
       try {
         let answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         console.log("Answer created and set:", answer);
 
-        // send the answer to the other client through the signaling server
         ws.send(JSON.stringify({
           room: roomId,
           type: 'answer',
@@ -166,11 +175,6 @@ function App() {
   }
 
   ws.onmessage = async function (message) {
-    // transform from text to json object
-    // message: {
-    // offer: {type: 'offer', sdp: 'v=0\r\no=- 7405937665467555657 2 IN IP4 127.0.0.1\r\ns…0 0\r\na=extmap-allow-mixed\r\na=msid-semantic: WMS\r\n'}
-    // type: "offer"
-    // }
     message = (JSON.parse(message.data));
     console.log("received from ws a raw message", message);
 
@@ -181,15 +185,13 @@ function App() {
 
     if (message.type === 'initiate_offer') {
       setIsInitiator(true);
-      // if (isInitiator) {
       createConnection();
-      // }
+      console.log("Initiating offer as initiator");
     }
 
     if (message.type === 'wait_for_new_user') {
       console.log("User disconnected. Waiting for a new user to join.");
-      // Perform any necessary cleanup, UI updates, or reset variables
-      // setIsInitiator(false);
+      setConnected(false);
     }
 
     if (message.type === 'offer') {
@@ -212,7 +214,6 @@ function App() {
 
       const candidate = new RTCIceCandidate(message.candidate);
       if (pc.remoteDescription && pc.remoteDescription.type) {
-        // If the remote description is set, add the candidate
         try {
           await pc.addIceCandidate(candidate);
           console.log("ICE candidate added:", candidate);
@@ -220,7 +221,6 @@ function App() {
           console.error("Error adding ICE candidate:", error);
         }
       } else {
-        // If the remote description is not set yet, store the candidate in the queue
         candidatesQueue.push(candidate);
       }
     }
@@ -250,7 +250,6 @@ function App() {
       const localVideo = document.getElementById('localVideo');
       localVideo.srcObject = stream;
 
-      // Add the tracks to the RTCPeerConnection
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
@@ -261,86 +260,376 @@ function App() {
 
   const candidatesQueue = [];
 
-  // const onCandidate = async function (message) {
-  //   const candidate = new RTCIceCandidate(message.candidate);
-  //   if (pc.remoteDescription && pc.remoteDescription.type) {
-  //     // If the remote description is set, add the candidate
-  //     try {
-  //       await pc.addIceCandidate(candidate);
-  //       console.log("ICE candidate added:", candidate);
-  //     } catch (error) {
-  //       console.error("Error adding ICE candidate:", error);
-  //     }
-  //   } else {
-  //     // If the remote description is not set yet, store the candidate in the queue
-  //     candidatesQueue.push(candidate);
-  //   }
-  // };
-
-
   dataChannel.onmessage = (event) => {
-    // update the state
     const receivedData = JSON.parse(event.data);
     console.log(receivedData);
 
     isRemoteUpdate.current = true;
-    setCode(receivedData.code);
-    setLanguage(receivedData.language);
-  };
+    if (receivedData.code !== undefined) {
+      setCode(receivedData.code);
+    }
+    if (receivedData.language !== undefined) {
+      setLanguage(receivedData.language);
+    };
+    if (receivedData.task !== undefined) {
+      setTask(receivedData.task);
+    }
+    if (receivedData.inputText !== undefined) {
+      setInputText(receivedData.inputText);
+    }
+    if (receivedData.outputText !== undefined) {
+      setOutputText(receivedData.outputText);
+    }
+  }
 
   useEffect(() => {
+    setRemoteChanges(false);
     setCode(getDefaultValue(language))
   }, [language])
 
-  useEffect(() => {
-    ws.onopen = function () {
-      ws.send(JSON.stringify({ type: 'join', room: roomId }));
-    };
-  }, []);
 
   useEffect(() => {
-    if (code !== undefined && !isRemoteUpdate.current) {
+    if (remoteChanges !== false && code !== undefined && !isRemoteUpdate.current) {
       if (dataChannel.readyState === "open") {
         let dataToBeSent = {
-          code: code,
+          code: code
+        }
+        dataChannel.send(JSON.stringify(dataToBeSent));
+      }
+    }
+    setRemoteChanges(true);
+    isRemoteUpdate.current = false;
+  }, [code]);
+
+  useEffect(() => {
+    if (!isRemoteUpdate.current) {
+      if (dataChannel.readyState === "open") {
+        let dataToBeSent = {
           language: language
         }
         dataChannel.send(JSON.stringify(dataToBeSent));
       }
     }
     isRemoteUpdate.current = false;
-  }, [code, language]);
+  }, [language]);
 
+  useEffect(() => {
+    if (!isRemoteUpdate.current) {
+      if (dataChannel.readyState === "open") {
+        let dataToBeSent = {
+          inputText: inputText
+        }
+        dataChannel.send(JSON.stringify(dataToBeSent));
+      }
+    }
+    isRemoteUpdate.current = false;
+  }, [inputText]);
+
+  useEffect(() => {
+    if (!isRemoteUpdate.current) {
+      if (dataChannel.readyState === "open") {
+        let dataToBeSent = {
+          outputText: outputText
+        }
+        dataChannel.send(JSON.stringify(dataToBeSent));
+      }
+    }
+    isRemoteUpdate.current = false;
+  }, [outputText]);
+
+  useEffect(() => {
+    if (!isRemoteUpdate.current) {
+      if (dataChannel.readyState === "open") {
+        let dataToBeSent = {
+          task: task
+        }
+        dataChannel.send(JSON.stringify(dataToBeSent));
+      }
+    }
+    isRemoteUpdate.current = false;
+  }, [task]);
+
+  const toggleVideoContainer = () => {
+    const chatContainer = document.querySelector('.chat-container');
+    const videoContainer = document.getElementById('video-container');
+
+    if (!showVideoContainer) {
+      chatContainer.classList.add('expanded-chat-container');
+      videoContainer.style.display = 'none';
+    } else {
+      chatContainer.classList.remove('expanded-chat-container');
+      videoContainer.style.display = 'flex';
+    }
+    setShowVideoContainer(!showVideoContainer);
+  };
+
+  let _loadingFlag = true;
+  let _timer;
+  let _loadingStates = ["Loading...", "Loading..", "Loading.", "Loading.."];
+  let _index = 0;
+
+  function startLoadingAnimation() {
+    if (!_loadingFlag) return;
+    setOutputText(_loadingStates[_index]);
+    _index = (_index + 1) % _loadingStates.length;
+    _timer = setTimeout(startLoadingAnimation, 200);
+  }
+
+  function stopLoadingAnimation() {
+    _loadingFlag = false;
+    clearTimeout(_timer);
+  }
+
+  const runCode = async () => {
+    setSelected("Output");
+    startLoadingAnimation();
+
+    const languages = {
+      "java": 91,
+      "python": 92,
+      "javascript": 93,
+      "cpp": 76,
+    }
+
+    const data = JSON.stringify({
+      language_id: languages[language],
+      source_code: btoa(code),
+      stdin: btoa(inputText)
+    });
+
+    const xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
+
+    xhr.addEventListener('readystatechange', function () {
+      if (this.readyState === this.DONE) {
+        if (this.status === 200 || this.status === 201) {
+          let jsonObject = JSON.parse(this.responseText);
+          let token = jsonObject.token;
+
+          const data = null;
+
+          const xhrGet = new XMLHttpRequest();
+          xhrGet.withCredentials = true;
+
+          xhrGet.addEventListener('readystatechange', function () {
+            if (this.readyState === this.DONE) {
+              stopLoadingAnimation();
+              if (this.status === 200) {
+                let jsonObject = JSON.parse(this.responseText);
+                if (jsonObject.stdout == null)
+                  setOutputText(atob(jsonObject.compile_output));
+                else
+                  setOutputText(atob(jsonObject.stdout));
+              } else {
+                console.error('GET request failed with status:', this.status);
+              }
+            }
+          });
+
+          xhrGet.addEventListener('error', function () {
+            console.error('GET request encountered an error');
+          });
+
+          xhrGet.open('GET', `/submissions/${token}?base64_encoded=true&fields=*`);
+          xhrGet.setRequestHeader('X-RapidAPI-Key', process.env.REACT_APP_XRAPIDAPYKEY);
+          xhrGet.setRequestHeader('X-RapidAPI-Host', 'judge0-ce.p.rapidapi.com');
+
+          xhrGet.send(data);
+        } else {
+          if (this.status === 429) {
+            setOutputText("The code compilation service has exceeded its daily usage limit. Please try again later or contact the support team for further assistance.")
+          }
+          console.error('POST request failed with status:', this.status);
+          console.log(this);
+        }
+      }
+    });
+
+    xhr.addEventListener('error', function () {
+      console.error('POST request encountered an error');
+    });
+
+    xhr.open('POST', '/submissions?base64_encoded=true&fields=*');
+    xhr.setRequestHeader('content-type', 'application/json');
+    xhr.setRequestHeader('X-RapidAPI-Key', process.env.REACT_APP_XRAPIDAPYKEY);
+    xhr.setRequestHeader('X-RapidAPI-Host', 'judge0-ce.p.rapidapi.com');
+
+    xhr.send(data);
+  }
+
+  const toggleAudio = () => {
+    const localVideo = document.getElementById('localVideo');
+    if (localVideo.srcObject) {
+      localVideo.srcObject.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setAudioMuted(!audioMuted);
+    }
+  };
+
+  const toggleVideo = () => {
+    const localVideo = document.getElementById('localVideo');
+    if (localVideo.srcObject) {
+      localVideo.srcObject.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setVideoMuted(!videoMuted);
+    }
+  };
+
+  const handleClick = (option) => {
+    setSelected(option);
+  };
+
+
+  pc.onconnectionstatechange = (event) => {
+    console.log(`Connection state changed: ${pc.connectionState}`);
+    if (pc.connectionState == "connected")
+      setConnected(true);
+    else
+      setConnected(false);
+  };
 
   return (
     <>
       <div className="app-root">
-        <video id="localVideo" autoPlay muted style={{ position: 'absolute', right: 0, bottom: 0, width: 250, height: 250 }} />
-        <video id="remoteVideo" autoPlay playsInline style={{ position: 'absolute', right: 250, bottom: 0, width: 250, height: 250 }} />
         <div className="top">
           <div className="top-left">
             <div className="editor-settings">
-              <div className="settings"><IoMdSettings /></div>
+              <div className={connected === true ? "settings green" : "settings gray"}>
+                {connected ? (
+                  <TbAccessPoint title="Connected" />
+                ) : (
+                  <TbAccessPointOff title="Not connected" />
+                )}
+
+              </div>
               <div className="language">
-                <BasicSelect
-                  setLanguage={(lang) => setLanguage(lang)} />
+                <select
+                  value={language}
+                  onChange={changeSelectedLanguage}
+                >
+                  <option value="java">Java</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="python">Python</option>
+                  <option value="cpp">C++</option>
+                </select>
               </div>
             </div>
-            <div className="run"><p>Run</p></div>
+            <div className="run-code" title="Run code" onClick={runCode}><TbPlayerPlay /></div>
           </div>
           <div className="top-right">
+
+            <div
+              className={`option ${selected === "Task" ? "state" : ""}`}
+              onClick={() => handleClick("Task")}
+            >
+              <p>Task</p>
+            </div>
+            <div
+              className={`option ${selected === "Input" ? "state" : ""}`}
+              onClick={() => handleClick("Input")}
+            >
+              <p>Input</p>
+            </div>
+            <div
+              className={`option ${selected === "Output" ? "state" : ""}`}
+              onClick={() => handleClick("Output")}
+            >
+              <p>Output</p>
+            </div>
           </div>
         </div>
-        <Editor
-          code={code}
-          language={language}
-          setCode={(code) => {
-            setCode(code);
-          }}
-        />
-      </div>
+        <div className="bottom">
+
+          <Editor
+            code={code}
+            language={language}
+            setCode={(code) => {
+              setCode(code);
+            }}
+          />
+          <div className="container">
+            <div className="chat-container">
+              <TaskEditor
+                text={task}
+                setText={(text) => {
+                  setTask(text);
+                }}
+                readOnly={isInitiator}
+                className={selected !== "Task" ? "hidden" : ""}
+              />
+
+              <InputEditor
+                text={inputText}
+                setText={(text) => {
+                  setInputText(text);
+                }}
+                className={selected !== "Input" ? "hidden" : ""}
+              />
+
+              <OutputEditor
+                text={outputText}
+                setText={(text) => {
+                  setOutputText(text);
+                }}
+                className={selected !== "Output" ? "hidden" : ""}
+              />
+            </div>
+            <div className="video-wrapper">
+              <div className="video-controller">
+                <p>Chat Window</p>
+                {showVideoContainer ? (
+                  <RiArrowDropUpFill fontSize="1.5em" onClick={toggleVideoContainer} />
+                ) : (
+                  <RiArrowDropDownFill fontSize="1.5em" onClick={toggleVideoContainer} />
+                )}
+              </div>
+
+              <div id="video-container">
+                <video id="remoteVideo" autoPlay playsInline />
+                <div className="controller">
+                  {audioMuted ? (
+                    <AiOutlineAudioMuted
+                      color="#f88888"
+                      fontSize="1.5em"
+                      onClick={toggleAudio}
+                    />
+                  ) : (
+                    <AiOutlineAudio
+                      color="white"
+                      fontSize="1.5em"
+                      onClick={toggleAudio}
+                    />
+                  )}
+                  {videoMuted ? (
+                    <BsCameraVideoOff
+                      color="#f88888"
+                      fontSize="1.5em"
+                      onClick={toggleVideo}
+                    />
+                  ) : (
+                    <BsCameraVideo
+                      color="white"
+                      fontSize="1.5em"
+                      onClick={toggleVideo}
+                    />
+                  )}
+
+                </div>
+                <video id="localVideo" autoPlay muted />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div >
     </>
   );
+
+  function changeSelectedLanguage(e) {
+    setLanguage(e.target.value);
+    console.log(e.target.value);
+  }
 }
 
 export default App;

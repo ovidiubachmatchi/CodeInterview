@@ -23,12 +23,18 @@ function Index() {
             <div id="right">
                 <div id="right-box">
                     <input className='button input' onChange={e => setInvitationCode(e.target.value)} type="text" placeholder='Invitation code' />
-                    <a href={"/room?id=" + invitationCode}>
-                        <button className="button">Join an interview</button>
-                    </a>
+                    {invitationCode.length > 0 ? (
+                        <a href={"/room?id=" + invitationCode}>
+                            <button className="button">Join an interview</button>
+                        </a>
+                    ) : (
+                        <a>
+                            <button className="button" disabled>Join an interview</button>
+                        </a>
+                    )}
                 </div>
             </div>
-        </div>
+        </div >
     )
 }
 

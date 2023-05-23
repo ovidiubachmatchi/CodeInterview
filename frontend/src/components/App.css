@@ -13,7 +13,123 @@
     flex-direction: row;
 }
 
+.hidden {
+    display: none !important;
+}
+
+#video-container {
+    width: 100%;
+    background-color: black;
+    /* max-height: fit-content; */
+    min-height: fit-content;
+    /* height: 30%; */
+    right: 0;
+    display: flex;
+    position: relative;
+    justify-content: center;
+/* display: flex; */
+    align-items: center;
+}
+.bottom {
+    display: flex;
+    flex-direction: row;
+}
+
+.container {
+    width: 40vw;
+    height: 90vh;
+    /* display: flex; */
+}
+
+
+#remoteVideo,
+#localVideo {
+aspect-ratio: 5/4;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit:cover;
+}
+
+
+.chat-container {
+    height: calc(100% - 30% - 5vh); /* Actualizați pentru a scădea înălțimea video-controller */
+    background-color: rgb(40, 40, 40);
+    transition: height 0.2s;
+}
+
+.expanded-chat-container {
+    height: calc(100% - 5vh); /* Actualizați pentru a scădea înălțimea video-controller */
+}
+
+.video-wrapper {
+    transition: height 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.option {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    /* bold text */
+    font-weight: bold;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.video-controller {
+    height: 5vh;
+    color: rgb(150, 150, 150);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background-color: rgb(16, 16, 16);
+    flex-direction: row;
+    flex-wrap: nowrap;
+    padding: 0 1rem;
+    position: relative; /* Adăugați această linie pentru a plasa textul relativ la container */
+}
+
+.video-controller p {
+    margin: 0;
+    position: absolute; /* Adăugați această linie pentru a centra textul pe orizontală */
+    left: 50%; /* Adăugați această linie pentru a centra textul pe orizontală */
+    transform: translateX(-50%); /* Adăugați această linie pentru a centra textul pe orizontală */
+}
+
+
+
+video {
+    background-color: rgba(255, 255, 255, 0.1);
+    height: 100%;
+    width: 45%;
+}
+
+.option p {
+    color: rgb(64, 64, 64);
+}
+
+.controller {
+    height: 20vh;
+    width: 10%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+select {
+    background-color: gray;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    padding: 0.5rem;
+    margin: 0.5rem;
+    cursor: pointer;
+    font-family: "Roboto","Helvetica","Arial",sans-serif;
+}
+
 .top-right {
+    justify-content: space-around;
     background-color: rgb(15, 15, 15);
     height: 10vh;
     min-height: 3rem;
@@ -47,7 +163,6 @@
 }
 
 .settings {
-background-color: gray;
 width: 2rem;
 margin: 1rem;
 cursor: pointer;
@@ -58,13 +173,47 @@ aspect-ratio: 1 / 1;
 display: flex;
 }
 
+.green {
+    color: rgb(12, 224, 12);
+}
+
+.gray {
+    color: rgb(86, 86, 86);
+}
+
+.run-code p {
+    margin-left: 5%;
+}
+
+.editor-settings .settings {
+    position: relative;
+  }
+  
+  .editor-settings .settings::before {
+    content: attr(title);
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px;
+    background-color: #000;
+    color: #fff;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out;
+    pointer-events: none;
+  }
+  
+  .editor-settings .settings:hover::before {
+    opacity: 1;
+  }
+
 .settings > svg {
 width: 80%;
 height: 80%;
 }
 
 .language {
-background-color: gray;
 height: 2rem;
 margin: 1rem;
 cursor: pointer;
@@ -76,18 +225,43 @@ display: flex;
 justify-content: space-between;
 }
 
-.run {
+.remote-cursor {
+    background-color: rgba(255, 0, 0, 0.5);
+    width: 2px;
+  }  
+
+.run-code {
     background-color: rgb(65, 205, 65);
     height: 2rem;
     margin: 1rem;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 4px;
     text-align: center;
     font-family: "Roboto","Helvetica","Arial",sans-serif;
     align-items: center;
-    aspect-ratio: 2 / 1;
+    aspect-ratio: 3/2;
     display: flex;
     justify-content: center;
+}
+
+.run-tests {
+    border: 1px solid rgb(65, 205, 65);
+    height: 2rem;
+    border-radius: 4px;
+    font-weight: bold;
+    color: rgb(65, 205, 65);
+    margin: 1rem;
+    cursor: pointer;
+    text-align: center;
+    font-family: "Roboto","Helvetica","Arial",sans-serif;
+    align-items: center;
+    aspect-ratio: 3 / 1;
+    display: flex;
+    justify-content: center;
+}
+
+.state > p {
+    color: rgb(153, 153, 153) !important;
 }
 
 .language > svg {
