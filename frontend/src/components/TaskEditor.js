@@ -5,8 +5,7 @@ function TaskEditor(props) {
     const {
         text,
         setText,
-        className,
-        readOnly
+        className
     } = props
 
     function editorDidMount(editor, monaco) {
@@ -27,10 +26,14 @@ function TaskEditor(props) {
         lineHeight: 24,
         wordWrap: "on",
         wrappingIndent: "indent",
+        scrollbar: {
+            vertical: "hidden",
+            horizontal: "hidden",
+            handleMouseWheel: false,
+        },
         autoClosingQuotes: "always",
         autoClosingBrackets: "always",
         formatOnPaste: true,
-        readOnly: !readOnly,
         formatOnType: true,
         minimap: { enabled: false },
         renderIndentGuides: false, // Dezactivează delimitatorii de indentare

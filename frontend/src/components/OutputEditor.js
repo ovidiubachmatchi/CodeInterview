@@ -28,10 +28,15 @@ function OutputEditor(props) {
         wrappingIndent: "indent",
         autoClosingQuotes: "always",
         autoClosingBrackets: "always",
+        minimap: { enabled: false },
+        scrollbar: {
+            vertical: "hidden",
+            horizontal: "hidden",
+            handleMouseWheel: true
+        },
         readOnly: true,
         formatOnPaste: true,
         formatOnType: true,
-        minimap: { enabled: false },
         renderIndentGuides: false,
         padding: { left: 0, bottom: 0 }
     };

@@ -31,6 +31,11 @@ function InputEditor(props) {
         formatOnPaste: true,
         formatOnType: true,
         minimap: { enabled: false },
+        scrollbar: {
+            vertical: "hidden",
+            horizontal: "hidden",
+            handleMouseWheel: true
+        },
         renderIndentGuides: false,
         padding: { left: 0, bottom: 0 }
     };

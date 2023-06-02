@@ -19,6 +19,13 @@ function Editor(props) {
 
   const options = {
     fontSize: 14,
+    hideCursorInOverviewRuler: true,
+    minimap: { enabled: false },
+    scrollbar: {
+      vertical: "hidden",
+      horizontal: "hidden",
+      handleMouseWheel: true
+    },
     selectOnLineNumbers: true
   };
 

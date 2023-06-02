@@ -70,8 +70,17 @@ const createConnection = async () => {
       console.error("Could not find element with ID 'localVideo'.");
     }
   }
+<<<<<<< Updated upstream
   dataChannel.onopen = (event) => {
     console.log('Data channel is open');
+=======
+
+
+
+  dataChannel.onclose = () => {
+    console.log('Data channel closed, reacreating one');
+    window.location.reload(true)
+>>>>>>> Stashed changes
   };
 
   if (dataChannel)
@@ -81,6 +90,7 @@ const createConnection = async () => {
 
   console.log('call button called');
   if (window.canJoin === 1) {
+<<<<<<< Updated upstream
     if (pc.signalingState === 'have-remote-offer') {
       let answer = await pc.createAnswer();
       console.log(1);
@@ -96,12 +106,21 @@ const createConnection = async () => {
       console.log(2);
       await pc.setLocalDescription(offer);
       console.log('creating offer', offer);
+=======
+    let offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+    console.log('creating offer', offer);
+    if (ws.readyState === WebSocket.OPEN)
+>>>>>>> Stashed changes
       ws.send(JSON.stringify({
         room: roomId,
         type: 'offer',
         offer: offer
       }));
+<<<<<<< Updated upstream
     }
+=======
+>>>>>>> Stashed changes
   }
 
   console.log('offer sended to ws');
@@ -142,9 +161,10 @@ const createConnection = async () => {
 
 
   pc.onicecandidate = async (event) => {
-    console.log("Received ICE candidate event: ", event);
+    // console.log("Received ICE candidate event: ", event);
     if (event.candidate) {
-      console.log("Sending new candidate: ", event.candidate);
+      // console.log("Sending new candidate: ", event.candidate);
+
       ws.send(JSON.stringify({
         room: roomId,
         type: 'candidate',
@@ -186,7 +206,7 @@ function App() {
         const candidate = candidatesQueue.shift();
         try {
           await pc.addIceCandidate(candidate);
-          console.log("ICE candidate added from queue:", candidate);
+          // console.log("ICE candidate added from queue:", candidate);
         } catch (error) {
           console.error("Error adding ICE candidate from queue:", error);
         }
@@ -216,6 +236,7 @@ function App() {
 
 
 
+<<<<<<< Updated upstream
   const addAnswer = async (answer) => {
     if (!pc.currentRemoteDescription) {
       console.log("remote3");
@@ -223,9 +244,11 @@ function App() {
     }
   }
 
+=======
+>>>>>>> Stashed changes
   ws.onmessage = async function (message) {
     message = (JSON.parse(message.data));
-    console.log("received from ws a raw message", message);
+    // console.log("received from ws a raw message", message);
 
     if (message.type === 'toomany') {
       window.canJoin = 0;
@@ -259,18 +282,20 @@ function App() {
     if (message.type === 'answer') {
       message = JSON.parse(String.fromCharCode(...message.answer.data));
       console.log('answer received from ws', message);
-      addAnswer(message.answer)
+      if (!pc.currentRemoteDescription) {
+        await pc.setRemoteDescription(message.answer)
+      }
     }
 
     if (message.type === 'candidate') {
       message = JSON.parse(String.fromCharCode(...message.candidate.data));
-      console.log('candidate received from ws', message);
+      // console.log('candidate received from ws', message);
 
       const candidate = new RTCIceCandidate(message.candidate);
       if (pc.remoteDescription && pc.remoteDescription.type) {
         try {
           await pc.addIceCandidate(candidate);
-          console.log("ICE candidate added:", candidate);
+          // console.log("ICE candidate added:", candidate);
         } catch (error) {
           console.error("Error adding ICE candidate:", error);
         }
@@ -282,7 +307,7 @@ function App() {
 
   pc.ontrack = (event) => {
     const remoteVideo = document.getElementById('remoteVideo');
-    console.log('Remote track added:', event.streams[0]);
+    // console.log('Remote track added:', event.streams[0]);
     if (event.streams && event.streams[0]) {
       remoteVideo.srcObject = event.streams[0];
     } else {
@@ -323,6 +348,7 @@ function App() {
       console.log(receivedData);
       console.log("custom message on datachannel received");
 
+<<<<<<< Updated upstream
       isRemoteUpdate.current = true;
       if (receivedData.code !== undefined) {
         setCode(receivedData.code);
@@ -339,6 +365,15 @@ function App() {
       if (receivedData.outputText !== undefined) {
         setOutputText(receivedData.outputText);
       }
+=======
+  dataChannel.onmessage = (event) => {
+    const receivedData = JSON.parse(event.data);
+    // console.log(receivedData);
+
+    isRemoteUpdate.current = true;
+    if (receivedData.code !== undefined) {
+      setCode(receivedData.code);
+>>>>>>> Stashed changes
     }
 
   useEffect(() => {
@@ -620,7 +655,6 @@ function App() {
                 setText={(text) => {
                   setTask(text);
                 }}
-                readOnly={isInitiator}
                 className={selected !== "Task" ? "hidden" : ""}
               />
 
