@@ -70,17 +70,14 @@ const createConnection = async () => {
       console.error("Could not find element with ID 'localVideo'.");
     }
   }
-<<<<<<< Updated upstream
+
   dataChannel.onopen = (event) => {
     console.log('Data channel is open');
-=======
-
-
+  }
 
   dataChannel.onclose = () => {
     console.log('Data channel closed, reacreating one');
     window.location.reload(true)
->>>>>>> Stashed changes
   };
 
   if (dataChannel)
@@ -90,7 +87,6 @@ const createConnection = async () => {
 
   console.log('call button called');
   if (window.canJoin === 1) {
-<<<<<<< Updated upstream
     if (pc.signalingState === 'have-remote-offer') {
       let answer = await pc.createAnswer();
       console.log(1);
@@ -102,25 +98,16 @@ const createConnection = async () => {
         answer: answer
       }));
     } else {
-      let offer = await pc.createOffer();
-      console.log(2);
-      await pc.setLocalDescription(offer);
+      let offer = await pc.createOffer()
+      await pc.setLocalDescription(offer)
       console.log('creating offer', offer);
-=======
-    let offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    console.log('creating offer', offer);
-    if (ws.readyState === WebSocket.OPEN)
->>>>>>> Stashed changes
-      ws.send(JSON.stringify({
-        room: roomId,
-        type: 'offer',
-        offer: offer
-      }));
-<<<<<<< Updated upstream
+      if (ws.readyState === WebSocket.OPEN)
+        ws.send(JSON.stringify({
+          room: roomId,
+          type: 'offer',
+          offer: offer
+        }));
     }
-=======
->>>>>>> Stashed changes
   }
 
   console.log('offer sended to ws');
@@ -234,18 +221,12 @@ function App() {
     }
   };
 
-
-
-<<<<<<< Updated upstream
   const addAnswer = async (answer) => {
     if (!pc.currentRemoteDescription) {
       console.log("remote3");
       await pc.setRemoteDescription(answer)
     }
   }
-
-=======
->>>>>>> Stashed changes
   ws.onmessage = async function (message) {
     message = (JSON.parse(message.data));
     // console.log("received from ws a raw message", message);
@@ -348,7 +329,6 @@ function App() {
       console.log(receivedData);
       console.log("custom message on datachannel received");
 
-<<<<<<< Updated upstream
       isRemoteUpdate.current = true;
       if (receivedData.code !== undefined) {
         setCode(receivedData.code);
@@ -365,22 +345,12 @@ function App() {
       if (receivedData.outputText !== undefined) {
         setOutputText(receivedData.outputText);
       }
-=======
-  dataChannel.onmessage = (event) => {
-    const receivedData = JSON.parse(event.data);
-    // console.log(receivedData);
-
-    isRemoteUpdate.current = true;
-    if (receivedData.code !== undefined) {
-      setCode(receivedData.code);
->>>>>>> Stashed changes
     }
 
   useEffect(() => {
     setRemoteChanges(false);
     setCode(getDefaultValue(language))
   }, [language])
-
 
   useEffect(() => {
     if (remoteChanges !== false && code !== undefined && !isRemoteUpdate.current) {
@@ -556,24 +526,32 @@ function App() {
     xhr.send(data);
   }
 
+  let debounceTimeoutId;
+
   const toggleAudio = () => {
-    const localVideo = document.getElementById('localVideo');
-    if (localVideo.srcObject) {
-      localVideo.srcObject.getAudioTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setAudioMuted(!audioMuted);
-    }
+    clearTimeout(debounceTimeoutId);
+    debounceTimeoutId = setTimeout(() => {
+      const localVideo = document.getElementById('localVideo');
+      if (localVideo.srcObject) {
+        localVideo.srcObject.getAudioTracks().forEach(track => {
+          track.enabled = !track.enabled;
+        });
+        setAudioMuted(!audioMuted);
+      }
+    }, 150); // 300ms debounce time
   };
 
   const toggleVideo = () => {
-    const localVideo = document.getElementById('localVideo');
-    if (localVideo.srcObject) {
-      localVideo.srcObject.getVideoTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setVideoMuted(!videoMuted);
-    }
+    clearTimeout(debounceTimeoutId);
+    debounceTimeoutId = setTimeout(() => {
+      const localVideo = document.getElementById('localVideo');
+      if (localVideo.srcObject) {
+        localVideo.srcObject.getVideoTracks().forEach(track => {
+          track.enabled = !track.enabled;
+        });
+        setVideoMuted(!videoMuted);
+      }
+    }, 150); // 300ms debounce time
   };
 
   const handleClick = (option) => {
@@ -731,3 +709,4 @@ function App() {
 }
 
 export default App;
+
